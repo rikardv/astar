@@ -13,7 +13,7 @@ class PuzzleState:
         return self.score < other.score
      
     def get_score(self):
-        return self.depth + self.get_heuristic()
+        return self.depth + self.get_manhattan_heuristic()
     
     # Manhattan distance heuristic
     def get_manhattan_heuristic(self):
@@ -21,7 +21,15 @@ class PuzzleState:
         for i in range(3):
             for j in range(3):
                 if self.state[i][j] != 0:
-                    x, y = divmod(self.state[i][j]-1, 3)
+                    # subtracting 1 from its value (since the tiles are numbered from 1 to 8) 
+                    # and dividing by 3 to get the row and column indices.
+
+                    # [[1, 2, 3],
+                    # [4, 0, 6],
+                    # [7, 5, 8]]
+                    # 5-1 is the tile's value minus 1, which gives us 4. 
+                    # We then pass 4 and 3 as arguments to divmod(), which returns a tuple containing (1, 1)
+                    x, y = divmod(self.state[i][j]-1, 3) 
                     h += abs(x-i) + abs(y-j)
         return h
 
@@ -30,6 +38,8 @@ class PuzzleState:
         h = 0
         for i in range(3):
             for j in range(3):
+                # For example, the tile with value 1 should be in position (0, 0) in the puzzle, so 3*0 + 0 + 1 = 1. 
+                # Similarly, the tile with value 5 should be in position (1, 2) in the puzzle, so 3*1 + 2 + 1 = 6.
                 if self.state[i][j] != 0 and self.state[i][j] != 3*i + j + 1:
                     h += 1
         return h
@@ -47,16 +57,16 @@ class PuzzleState:
         i, j = self.get_zero_pos()
         successors = []
         if i > 0: # swap with upper
-            successors.append(self.swap((i, j), (i-1, j)))
+            successors.append(self.swap_and_generate_child((i, j), (i-1, j)))
         if i < 2: # swap with lower
-            successors.append(self.swap((i, j), (i+1, j)))
+            successors.append(self.swap_and_generate_child((i, j), (i+1, j)))
         if j > 0: # swap with left
-            successors.append(self.swap((i, j), (i, j-1)))
+            successors.append(self.swap_and_generate_child((i, j), (i, j-1)))
         if j < 2: # swap with right
-            successors.append(self.swap((i, j), (i, j+1)))
+            successors.append(self.swap_and_generate_child((i, j), (i, j+1)))
         return successors
     
-    def swap(self, pos1, pos2):
+    def swap_and_generate_child(self, pos1, pos2):
         # Extract the row and column indices from the position tuples
         i1, j1 = pos1
         i2, j2 = pos2
@@ -105,22 +115,23 @@ def solve_puzzle(initial_state):
         print(curr_state)
         print('\n')
         if curr_state.get_manhattan_heuristic() == 0:
-            print("Solved in", curr_state.depth, "moves!")
             curr_state.print_path()
+            print("Solved in", curr_state.depth, "moves!")
             return
         visited_states.add(curr_state)
-        for successor in curr_state.get_successors(): # put all successors in priority queue
+        for successor in curr_state.get_successors():
             if successor in visited_states: #make sure we don't go to same state again
                 continue
             print(successor.score)
             print(successor)
             print('\n')
-            pq.put(successor)
+            pq.put(successor) # put all successors in priority queue
     print("Puzzle cannot be solved!")
 
 
 ## Some test data
-initial_state = [[1, 2, 3], [4, 5, 6], [0, 7, 8]]
-initial_state_v2 = [[1, 2, 3], [4, 0, 6], [7, 5, 8]]
-hard_puzzle = [[4,1,2], [5,8,3], [0,7,6]]
-solve_puzzle(hard_puzzle)
+puzzle1 = [[1, 0, 3], [4, 2, 5], [7, 8, 6]]
+puzzle2 = [[4,1,2], [5,8,3], [0,7,6]]
+puzzle3 = [[2, 8, 3], [1, 6, 4], [7, 0, 5]] # Non solvable
+puzzle4 = [[7, 2, 4], [5, 0, 6], [8, 3, 1]]
+solve_puzzle(puzzle4)
